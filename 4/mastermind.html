@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+    <title>Mastermind</title>
+    <style> td { border: solid black 1px; height: 40px; width: 40px;
+                padding-top: 20px; padding-left: 20px;}
+            p1 {font-size: 20pt;}
+    </style>
+  </head>
+  <body>
+
+    Duljina zamišljenog niza (length):
+    <input type="text" id="len"/>
+  </br>
+    Koliko različitih slova se smije pojaviti (nLetters):
+    <input type="text" id="nlet"/>
+  </br>
+    <button onclick="novaIgra()">Nova igra!</button>
+  </br>
+  <table id="tablica">
+
+  </table>
+</br>
+
+  <script>
+
+  $(document).ready(function()
+  {
+    $("body").on("click","td",promjena)
+  });
+
+  var length;
+  var nLetters;
+  var slovo = 'A';
+  var brojac = 1;
+  var boje = [];
+  boje.push('lightblue'); boje.push('yellow'); boje.push('lightgreen');
+  boje.push('red'); boje.push('lightpink'); boje.push('orange');
+  var iden;
+  var attempt = '';
+  var red = 0;
+  var correct;
+  var wrong;
+
+  function novaIgra()
+  {
+    length = document.getElementById("len").value;
+    nLetters = document.getElementById("nlet").value;
+    $("#tablica").empty();
+    $("body").remove("p1");
+    $("body").remove("p");
+    $.ajax({
+
+      url:"http://192.168.89.245/~zbujanov/dz4/getId.php",
+      data:
+      {
+        length:length,
+        nLetters:nLetters
+      },
+      dataType:"json",
+      type:"GET",
+      success:function(data)
+      {
+        iden = data;
+        biram();
+      },
+      error:function(data)
+      {
+        console.log("Greška kod Nove igre");
+      }
+    });
+  }
+
+  function crtaj()
+  {
+    $("#tablica").append("<tr>");
+    for(var j = 1; j <= length; j++)
+    {
+      var s = document.getElementById(""+j+"").innerHTML;
+      $("#tablica").append('<td>'+s+'</td>');
+    }
+    $("#tablica").append('Točnih: '+correct+',na krivom mjestu: '+wrong+'');
+    $("#tablica").append("</tr>");
+    if(parseInt(correct) === parseInt(length))
+      $("body").append("<p1>Bravo pogodio si zamisljen niz: "+attempt+"</p1>");
+  }
+
+  function promjena()
+  {
+    var kliknuto = $(this).prop("id");
+    if(parseInt(brojac) === parseInt(nLetters))
+    {
+        brojac = 1;
+        slovo = 'A';
+        $(this).html(slovo).css('background',boje[brojac-1]);
+    }
+    else
+    {
+      slovo = String.fromCharCode(slovo.charCodeAt() + 1);
+      brojac++;
+      $(this).html(slovo).css('background',boje[brojac-1]);
+    }
+  }
+
+  function biram()
+  {
+    $("body").append('<p>');
+    for(var i = 1; i <= length; i++)
+    {
+      $("body").append('<td id='+i+'>'+'A'+'</td>');
+      $("td").css('background',boje[0]);
+    }
+    $("body").append('<button onclick=pokusaj()>Pokušaj!</button></p>');
+  }
+
+  function pokusaj()
+  {
+    attempt = '';
+    for(var i = 1; i <= length; i++)
+    {
+      var temp = document.getElementById(""+i+"").innerHTML;
+      String(temp);
+      attempt += temp;
+    }
+    $.ajax({
+
+      url:"http://192.168.89.245/~zbujanov/dz4/guess.php",
+      data:
+      {
+        id:iden.id,
+        attempt:attempt
+      },
+      dataType:"json",
+      type:"GET",
+      success:function(data)
+      {
+        correct = data.nCorrectPosition;
+        wrong = data.nWrongPosition;
+        crtaj();
+      },
+      error:function(data)
+      {
+        console.log("Greška kod Pokušaj");
+      }
+    });
+  }
+
+  </script>
+
+  </body>
+</html>
